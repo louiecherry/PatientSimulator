@@ -8,7 +8,7 @@ public class HelloController {
 
     @RequestMapping("/")
     public String helloController() {
-        return "Welcome to Patient Simulator";
+        return "<b>Welcome to Patient Simulator</b>";
     }
 
 }

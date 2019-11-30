@@ -5,9 +5,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
-
-@SpringBootApplication
 public class ReadCsvFile {
 
     public static void main(String[] args) {
@@ -16,6 +18,22 @@ public class ReadCsvFile {
         readInCsv();
     }
 
+    public static List<String> getColumnHeaders()
+    {
+        List<String>Headers = new ArrayList<>();
+        String csvFile = "./src/main/java/com/example/demo/csv/2019-10-28_1030_PhysiologicalDataLog.csv";
+        String line = "";
+        String cvsSplitBy = ",";
+        try (BufferedReader br = new BufferedReader(new FileReader(csvFile))) {
+            line = br.readLine();
+            String[] data = line.split(cvsSplitBy);
+            Headers.addAll(Arrays.asList(data));
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        return Headers;
+    }
     public static void readInCsv(){
         String csvFile = "./src/main/java/com/example/demo/csv/2019-10-28_1030_PhysiologicalDataLog.csv";
         String line = "";
