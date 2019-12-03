@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.patient.simulators;
 
 public class Greeting {
     private long id;

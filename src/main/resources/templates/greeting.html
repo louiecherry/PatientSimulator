@@ -9,6 +9,43 @@
 <form action="#" th:action="@{/greeting}" th:object="${greeting}" method="post">
     <p>Id: <input type="text" th:field="*{id}" /></p>
     <p>Message: <input type="text" th:field="*{content}" /></p>
+    <p>csv: <input type="text" id="csv"/></p>
+    <select id="selectHeaders">
+        <option>Choose a header</option>
+    </select>
+    <script type="text/Javascript">
+        function changeLabel()
+        {
+            document.getElementById('button').innerHTML = document.getElementById('csv').value;
+        }
+    </script>
+    <input type="file" id="fileinput" />
+    <script>
+        function readSingleFile(evt) {
+            var f = evt.target.files[0];
+            if (f) {
+                var r = new FileReader();
+                r.onload = function(e) {
+                    var contents = e.target.result;
+                    //document.write("File Uploaded! <br />" + "name: " + f.name + "<br />" + "content: " + contents + "<br />" + "type: " + f.type + "<br />" + "size: " + f.size + " bytes <br />");
+
+                    var lines = contents.split("\n"), output = [];
+                    for (var i=0; i<1; i++){
+                        output.push("<tr><td>" + lines[i].split(",").join("</td><td>") + "</td></tr>");
+                    }
+                    //output = "<table>" + output.join("") + "</table>";
+                    document.write(output);
+                }
+                r.readAsText(f);
+                document.write(output);
+            } else {
+                alert("Failed to load file");
+            }
+        }
+        document.getElementById('fileinput').addEventListener('change', readSingleFile);
+    </script>
+
+    <button type="button" id="button" onclick="changeLabel()">Click Me!</button>
     <p><input type="submit" value="Submit" /> <input type="reset" value="Reset" /></p>
 </form>
 </body>
