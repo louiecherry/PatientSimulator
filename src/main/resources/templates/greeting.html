@@ -1,9 +1,13 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+    <script type="text/javascript" src="raphael-2.1.4.min.js"></script>
+    <script type="text/javascript" src="justgage.js"></script>
     <title>Getting Started: Handling Form Submission</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
+
 <body>
 <h1>Form</h1>
 <form action="#" th:action="@{/greeting}" th:object="${greeting}" method="post">
@@ -21,28 +25,173 @@
     </script>
     <input type="file" id="fileinput" />
     <script>
+        var gauges = [];
+        var currentStep = 0;
+        var currentTime = 0;
+        var tsData = [];
+        var mu = 0.0;
+        var gaugeIntervalVar;
+        var timerVar;
+        const updateFrequency = 100; //UNRELIABLE UNDER 100
+        const maxHR = 220.0;
+        const maxSBP = 200.0;
+        const maxDBP = 120.0;
+        const maxMAP = 150.0;
+        const maxRR = 60.0;
+        const categories = [['HR', maxHR], ['SBP', maxSBP], ['DBP', maxDBP],
+        ['MAP', maxMAP], ['RR', maxRR]];
         function readSingleFile(evt) {
             var f = evt.target.files[0];
             if (f) {
+                alert("File successfully loaded"); //Testing
                 var r = new FileReader();
                 r.onload = function(e) {
                     var contents = e.target.result;
                     //document.write("File Uploaded! <br />" + "name: " + f.name + "<br />" + "content: " + contents + "<br />" + "type: " + f.type + "<br />" + "size: " + f.size + " bytes <br />");
-
                     var lines = contents.split("\n"), output = [];
-                    for (var i=0; i<1; i++){
-                        output.push("<tr><td>" + lines[i].split(",").join("</td><td>") + "</td></tr>");
+                    output.push("<table>");
+                    //alert(lines[1]);
+                    for (var i=0; i<lines.length-1; i++){
+                        var lineContents = lines[i].split(",");
+                        output.push("<tr><td>" + lineContents[0]);
+                        tsSubArray = [];
+                        if (i>0){
+                            //alert(timeToInt(lineContents[0]));
+                            tsSubArray.push(timeToInt(lineContents[0]));
+                        }
+                        for (var j=3; j<8; j++){
+                            //alert("</td><td>" + lineContents[j]);
+                            //var outStr = lineContents[j].replace(",","");
+                            if (i>0){
+                                tsSubArray.push(parseFloat(lineContents[j]));
+                            }
+                            output.push("</td><td>" + lineContents[j]);
+                        }
+                        output.push("</td></tr>");
+                        if(tsSubArray.length > 0){
+                            tsData.push(tsSubArray); //Pushes current timestamp's data to data array
+                        }
+                        //alert(tsData);
+                        //output.push("<tr><<t></t>d>" + lines[i].split(",").join("</td><td>") + "</td></tr>");
                     }
+                    output.push("</table>");
+                    output = output.join().replace(/,/g,'');
+                    //alert(typeof(output));
+                    //alert(output);
                     //output = "<table>" + output.join("") + "</table>";
                     document.write(output);
+                    startGages();
                 }
                 r.readAsText(f);
-                document.write(output);
+                //document.write(output);
             } else {
                 alert("Failed to load file");
             }
         }
         document.getElementById('fileinput').addEventListener('change', readSingleFile);
+
+        function timeToInt(time){
+            if (!/\d\d\:\d\d\:\d\d/.test(time)){ //r̝̮̥͔͎̱̜eg̭̺̰̪e̮̝͕̗̙̗ͅx̨
+                alert("Timestamp incorrectly formatted, check CSV file.");
+                return 0;
+            }
+            else {
+                outVal = 60*(60*(parseInt(time[0]+time[1]))+parseInt(time[3]+time[4]))+parseInt(time[6]+time[7]);
+                return outVal;
+                //return 60*(60*(10*time[0]+time[1])+10*time[3]+time[4])+10*time[6]+time[7]
+            }
+        }
+
+        function intToTime(int){
+            var hours = "";
+            var minutes = "";
+            var seconds = "";
+            hours+=Math.floor(int/3600);
+            int = int%3600;
+            hours = zeroPad(hours);
+            minutes+=Math.floor(int/60);
+            int = int%60;
+            minutes = zeroPad(minutes);
+            seconds = zeroPad(int.toString());
+            var outStr = hours + ":" + minutes + ":" + seconds;
+            return outStr;
+        }
+
+        function zeroPad(x){
+            while (x.length < 2) {
+                x = 0 + x;
+                //console.log("yes");
+            }
+            return x
+        }
+
+        function startGages(){
+            var output = [];
+            output.push("<div class='parent'>");
+            output.push("<h1 id = 'timer'>Time: 00:00:00</h1>")
+            for (var i=0; i<5; i++){
+                output.push("<div style='width: 350px; height:280px; float: left;' id='g"+i+"'></div>");
+            }
+            output.push("</div>");
+            output = output.join().replace(/,/g,'');
+            document.write(output);
+            for (var i = 0; i<5; i++){
+                var gID = 'g'+i;
+                var a = new JustGage({
+                    id: gID,
+                    value: 0,
+                    min:0,
+                    max:categories[i][1],
+                    title: categories[i][0]
+                });
+                gauges.push(a);
+            }
+            gaugeIntervalVar = setInterval(updateGages, updateFrequency);
+            timerVar = setInterval(timer, 1000);
+        }
+
+        function updateGages(){
+
+        //alert("hi");
+            for(var i=0; i<gauges.length; i++){
+                var currentVal, nextVal, gaugeVal;
+                currentVal = tsData[currentStep][i+1];
+                if (currentStep < tsData.length-1) {
+                    nextVal = tsData[currentStep+1][i+1];
+                    gaugeVal = cosineInterpolate(currentVal, nextVal, mu);
+                }
+                else {
+                    gaugeVal = nextVal;
+                }
+                //alert(tsData[currentStep][i+1]);
+                gauges[i].refresh(gaugeVal);
+            }
+            const muStep = updateFrequency/5000;
+            mu = +(((mu+muStep)%1).toFixed(Math.ceil(Math.log(1/muStep))));
+            //console.log(mu);
+            if (mu == 0){
+                currentStep++;
+            }
+            if (currentStep==tsData.length-1){
+                clearInterval(gaugeIntervalVar);
+                clearInterval(timerVar);
+            }
+            //console.log(+((updateFrequency/1000).toFixed(3)));
+            //console.log(document.getElementById('timer').innerHTML);
+            //console.log(currentStep);
+        }
+        //Takes a y0 and y1, as well as a mu (progress along interpolated curve as a decimal) and computes
+        //an interpolated y value between y0 and y1 dependant on mu.
+        function cosineInterpolate(y0, y1, mu){
+            var mu2;
+            mu2=(1-Math.cos(mu*Math.PI))/2;
+            return (y0*(1-mu2)+y1*mu2);
+        }
+
+        function timer(){
+            currentTime += 1;
+            document.getElementById('timer').innerHTML = "Time: " + intToTime(currentTime);
+        }
     </script>
 
     <button type="button" id="button" onclick="changeLabel()">Click Me!</button>
