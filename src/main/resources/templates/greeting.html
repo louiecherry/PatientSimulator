@@ -9,14 +9,8 @@
 </head>
 
 <body>
-<h1>Form</h1>
+<h1>Patient Simulators</h1>
 <form action="#" th:action="@{/greeting}" th:object="${greeting}" method="post">
-    <p>Id: <input type="text" th:field="*{id}" /></p>
-    <p>Message: <input type="text" th:field="*{content}" /></p>
-    <p>csv: <input type="text" id="csv"/></p>
-    <select id="selectHeaders">
-        <option>Choose a header</option>
-    </select>
     <script type="text/Javascript">
         function changeLabel()
         {
@@ -79,7 +73,7 @@
                     //alert(typeof(output));
                     //alert(output);
                     //output = "<table>" + output.join("") + "</table>";
-                    document.write(output);
+                    //document.write(output);
                     startGages();
                 }
                 r.readAsText(f);
@@ -194,8 +188,6 @@
         }
     </script>
 
-    <button type="button" id="button" onclick="changeLabel()">Click Me!</button>
-    <p><input type="submit" value="Submit" /> <input type="reset" value="Reset" /></p>
-</form>
+    </form>
 </body>
 </html>
